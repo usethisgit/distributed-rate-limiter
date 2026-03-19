@@ -24,9 +24,17 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
 
 //        String userIp = request.getRemoteAddr();
 
-        String path = request.getRequestURI();
+//        String path = request.getRequestURI();
 
-        RateLimitResult result = rateLimiterService.checkRateLimit(path);
+//    <<    API Key Based Rate Limiting instead of user ip  >>
+        String apiKey = request.getHeader("X-API-KEY");
+
+        if (apiKey == null || apiKey.isEmpty()) {
+            response.setStatus(400);
+            response.getWriter().write("Missing API Key");
+            return false;
+        }
+        RateLimitResult result = rateLimiterService.checkRateLimit(apiKey);
 
         response.setHeader("X-RateLimit-Limit", String.valueOf(MAX_REQUESTS));
         response.setHeader("X-RateLimit-Remaining",String.valueOf(result.getRemaining()));

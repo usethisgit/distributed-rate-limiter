@@ -32,4 +32,9 @@ public class ApiController {
     public String paymentEndPoint() {
         return "Payment API response success";
     }
+
+    @GetMapping("/api/login")
+    public String loginEndPoint() {
+        return "Login success";
+    }
 }
