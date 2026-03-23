@@ -1,15 +1,19 @@
 rate-limit:
-  default:
+  default-config:
     limit: 5
     window: 60
 
   endpoints:
     /api/login:
-      limit: 5
+      limit: 3
       window: 60
 
     /api/payment:
       limit: 2
+      window: 60
+
+    /api/test:
+      limit: 5
       window: 60
 
     /api/search:

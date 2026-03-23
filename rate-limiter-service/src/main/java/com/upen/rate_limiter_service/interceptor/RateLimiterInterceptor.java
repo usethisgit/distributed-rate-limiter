@@ -2,6 +2,7 @@ package com.upen.rate_limiter_service.interceptor;
 
 import com.upen.rate_limiter_service.model.RateLimitResult;
 import com.upen.rate_limiter_service.service.RateLimiterService;
+import com.upen.rate_limiter_service.service.SlidingWindowRateLimiterService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
@@ -14,19 +15,18 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
     private static final int WINDOW_SIZE = 60;
 
     private final RateLimiterService rateLimiterService;
-    public RateLimiterInterceptor(RateLimiterService rateLimiterService) {
+    private final SlidingWindowRateLimiterService slidingWindowRateLimiterService;
+
+    public RateLimiterInterceptor(RateLimiterService rateLimiterService,
+                                  SlidingWindowRateLimiterService slidingWindowRateLimiterService) {
         this.rateLimiterService = rateLimiterService;
+        this.slidingWindowRateLimiterService = slidingWindowRateLimiterService;
     }
     @Override
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) throws Exception {
 
-//        String userIp = request.getRemoteAddr();
-
-//        String path = request.getRequestURI();
-
-//    <<    API Key Based Rate Limiting instead of user ip  >>
         String apiKey = request.getHeader("X-API-KEY");
 
         if (apiKey == null || apiKey.isEmpty()) {
@@ -34,18 +34,23 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
             response.getWriter().write("Missing API Key");
             return false;
         }
-        RateLimitResult result = rateLimiterService.checkRateLimit(apiKey);
 
-        response.setHeader("X-RateLimit-Limit", String.valueOf(MAX_REQUESTS));
-        response.setHeader("X-RateLimit-Remaining",String.valueOf(result.getRemaining()));
-        response.setHeader("X-RateLimit-Reset", String.valueOf(WINDOW_SIZE));
+        // ✅ GET PATH HERE
+        String path = request.getRequestURI();
+
+        System.out.println("path : "+path);
+        // ✅ PASS PATH TO SERVICE
+        RateLimitResult result = slidingWindowRateLimiterService.isAllowed(apiKey, path);
+
+        response.setHeader("X-RateLimit-Limit", "...");
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
 
         if (!result.isAllowed()) {
             response.setStatus(429);
             response.getWriter().write("Too Many Requests");
-
             return false;
         }
+
         return true;
     }
 }
